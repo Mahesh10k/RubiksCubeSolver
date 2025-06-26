@@ -20,11 +20,9 @@ class Cube {
 
 
   _rotateFace(face) {
-    // Rotate face itself
     const f = this.state[face];
     this.state[face] = [f[6], f[3], f[0], f[7], f[4], f[1], f[8], f[5], f[2]];
     const adjacent = [
-      // U
       [
         [5, [2,1,0]], // B bottom row
         [1, [2,1,0]], // R top row
@@ -67,9 +65,7 @@ class Cube {
         [1, [8,5,2]], // R right col (reversed)
       ],
     ];
-    // Extract the stickers to rotate
     const temp = adjacent[face].map(([f, idxs]) => idxs.map(i => this.state[f][i]));
-    // Rotate the stickers
     for (let i = 0; i < 4; i++) {
       const [f, idxs] = adjacent[face][i];
       const from = temp[(i + 3) % 4];
@@ -90,17 +86,14 @@ class Cube {
     this.moves = [];
   }
 
-  // Returns a list of moves to solve the cube (reverse scramble)
   getSolutionMoves() {
     if (!this.scrambleMoves || this.scrambleMoves.length === 0) return [];
-    // Reverse the scramble moves
     return this.scrambleMoves.slice().reverse().map(({ face, turns }) => ({
       face,
       turns: (4 - turns) % 4 || 4 
     }));
   }
 
-  // Step-by-step solver
   solveStepByStep() {
     this.solutionSteps = [];
     let tempCube = this.clone();
@@ -116,13 +109,11 @@ class Cube {
     return this.solutionSteps;
   }
 
-  // Universal beginner's solver: step 1 - white cross
   solveUniversalStepByStep() {
     this.solutionSteps = [];
     let tempCube = this.clone();
     this.solutionSteps.push({ state: tempCube.state.map(f => [...f]), move: 'Start' });
     const edgeMap = [
-      // [face, idx, adjFace, adjIdx]
       [0, 7, 2, 1], // U-F
       [0, 5, 1, 1], // U-R
       [0, 3, 4, 1], // U-L
@@ -148,33 +139,24 @@ class Cube {
       [3, 3, 4, 7], // D-L
       [3, 7, 5, 7], // D-B
     ];
-    // Helper to rotate a face and record the move
     const doMove = (f, t) => {
       tempCube.rotate(f, t);
       this.solutionSteps.push({ state: tempCube.state.map(ff => [...ff]), move: FACE_NAMES[f] + (t === 2 ? '2' : t === 3 ? "'" : '') });
     };
-    // Helper to check if a white edge is solved in D cross
     function isWhiteCrossSolved(cube) {
-      // D face edges: 3,1,5,7
       return [1,3,5,7].every(idx => cube.state[3][idx] === 'w');
     }
-    // Naive: repeat up to 12 times (guaranteed to solve)
     let tries = 0;
     while (!isWhiteCrossSolved(tempCube) && tries < 12) {
-      // For each edge, if it has white, try to move it to D cross
       for (const [f, i, af, ai] of edgeMap) {
         if (tempCube.state[f][i] === 'w' || tempCube.state[af][ai] === 'w') {
-          // If already in D cross, skip
           if (f === 3 && [1,3,5,7].includes(i)) continue;
-          // If in U layer, move down
           if (f === 0) {
             doMove(af, 2); 
           } else if (f === 3) {
-            // If in D but not correct, move it out
             doMove(af, 1);
             doMove(af, 1);
           } else {
-            // Else, bring to U layer
             doMove(f, 1);
           }
         }
@@ -188,20 +170,17 @@ class Cube {
     return this.state.every(face => face.every(sticker => sticker === face[0]));
   }
 
-  // Placeholder: naive solver (returns to solved state)
   solve() {
     
     this.state = Array(6).fill().map((_, i) => Array(9).fill(FACE_COLORS[i]));
     this.moves.push('Solved!');
   }
 
-  // For visualization: returns a string of all stickers (for getCubeSvg)
   toColorString() {
     return this.state.flat().join('');
   }
 }
 
-// --- UI ---
 const root = document.getElementById('root');
 let cube = new Cube();
 let solutionSteps = [];
@@ -209,7 +188,6 @@ let currentStep = 0;
 
 const manualScrambles = [
   {
-    // Scramble 1: U R F' L2 D B' U2 F R' D2 L B2 U'
     moves: [
       {face:0, turns:1}, // U
       {face:1, turns:1}, // R
@@ -242,7 +220,6 @@ const manualScrambles = [
     ]
   },
   {
-    // Scramble 2: F U2 R' D2 L B2 U' F2 R D' L2 B U
     moves: [
       {face:2, turns:1}, // F
       {face:0, turns:2}, // U2
@@ -275,7 +252,6 @@ const manualScrambles = [
     ]
   },
   {
-    // Scramble 3: L' D F2 R U' B L2 D' F U2 R2 B' L
     moves: [
       {face:4, turns:3}, // L'
       {face:3, turns:1}, // D
@@ -308,7 +284,6 @@ const manualScrambles = [
     ]
   },
   {
-    // Scramble 4: B2 U L' F D2 R2 U' B' L F2 D' R U
     moves: [
       {face:5, turns:2}, // B2
       {face:0, turns:1}, // U
@@ -354,7 +329,8 @@ function getCubeSvg(colorString) {
   };
   // Responsive SVG size
   const screenW = Math.min(window.innerWidth, 400);
-  const baseSize = 30;
+  const isMobile = window.innerWidth < 768;
+  const baseSize = isMobile ? 15 : 30;
   const size = screenW < 400 ? Math.floor(screenW / 12) : baseSize;
   const gap = 2;
   const facePos = {
